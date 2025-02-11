@@ -233,7 +233,7 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
     };
 
     IntentFilter intentFilter = new IntentFilter(BroadcastEvent.Type.CONFERENCE_TERMINATED.getAction());
-
+    toggleFirstVideoMuted = 0;
     LocalBroadcastManager.getInstance(getReactApplicationContext()).registerReceiver(this.onConferenceTerminatedReceiver, intentFilter);
   }
 }
