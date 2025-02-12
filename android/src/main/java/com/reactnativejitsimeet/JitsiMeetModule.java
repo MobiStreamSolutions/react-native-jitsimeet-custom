@@ -1,11 +1,18 @@
 package com.reactnativejitsimeet;
 
+import android.Manifest;
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.net.Uri;
+import android.provider.Settings;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.facebook.react.bridge.Promise;
@@ -23,10 +30,13 @@ import org.jitsi.meet.sdk.JitsiMeetUserInfo;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Map;
 
 @ReactModule(name = JitsiMeetModule.NAME)
 public class JitsiMeetModule extends ReactContextBaseJavaModule {
   public static final String NAME = "JitsiMeet";
+
+  private Boolean toggleFirstVideoMuted = true;
 
   private BroadcastReceiver onConferenceTerminatedReceiver;
 
@@ -135,12 +145,80 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
     JitsiMeetActivityExtended.launchExtended(getReactApplicationContext(), builder.build());
 
     this.registerOnConferenceTerminatedListener(onConferenceTerminated);
+    this.registerForBroadcastMessages();
   }
 
   @ReactMethod
   public void launch(ReadableMap options, Promise onConferenceTerminated) {
     launchJitsiMeetView(options, onConferenceTerminated);
   }
+
+  private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+      onBroadcastReceived(context, intent);
+    }
+  };
+
+  private void registerForBroadcastMessages() {
+    IntentFilter intentFilter = new IntentFilter();
+
+        /* This registers for every possible event sent from JitsiMeetSDK
+           If only some of the events are needed, the for loop can be replaced
+           with individual statements:
+           ex:  intentFilter.addAction(BroadcastEvent.Type.AUDIO_MUTED_CHANGED.getAction());
+                intentFilter.addAction(BroadcastEvent.Type.CONFERENCE_TERMINATED.getAction());
+                ... other events
+         */
+
+
+    for (BroadcastEvent.Type type : BroadcastEvent.Type.values()) {
+      intentFilter.addAction(type.getAction());
+    }
+
+    LocalBroadcastManager.getInstance(getReactApplicationContext()).registerReceiver(broadcastReceiver, intentFilter);
+  }
+  private void onBroadcastReceived(Context context, Intent intent) {
+    if (intent != null) {
+      BroadcastEvent event = new BroadcastEvent(intent);
+      if (event.getType() == BroadcastEvent.Type.VIDEO_MUTED_CHANGED) {
+        Map<String, Object> data = event.getData();
+        boolean isMuted = false;
+        if (data.containsKey("muted") && data.get("muted") instanceof Boolean) {
+          isMuted = (Boolean) data.get("muted");
+        }
+
+        if (!isMuted && !toggleFirstVideoMuted && ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+          != PackageManager.PERMISSION_GRANTED) {
+          JitsiMeetActivityExtended jitsiActivity = JitsiMeetActivityExtended.getInstance();
+          if (jitsiActivity != null) {
+            showMuteDialog();
+          }
+        }
+        toggleFirstVideoMuted = false;
+      }
+    }
+  }
+
+  private void showMuteDialog() {
+    JitsiMeetActivityExtended jitsiActivity = JitsiMeetActivityExtended.getInstance();
+    jitsiActivity.runOnUiThread(() -> {
+      new AlertDialog.Builder(jitsiActivity)
+        .setTitle("ShadowHQ needs your camera permission")
+        .setMessage("Please go to your device settings to enable video calling")
+        .setPositiveButton("Close", (dialog, which) -> dialog.dismiss())
+        .setNegativeButton("Go to Settings", (dialog, which) -> {
+          // Open the app's settings
+          Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+          Uri uri = Uri.fromParts("package", jitsiActivity.getPackageName(), null);
+          intent.setData(uri);
+          jitsiActivity.startActivity(intent);
+          dialog.dismiss();
+        })
+        .show();
+    });
+  }
+
 
   private void registerOnConferenceTerminatedListener(Promise onConferenceTerminated) {
     onConferenceTerminatedReceiver = new BroadcastReceiver() {
@@ -155,7 +233,7 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
     };
 
     IntentFilter intentFilter = new IntentFilter(BroadcastEvent.Type.CONFERENCE_TERMINATED.getAction());
-
+    toggleFirstVideoMuted =  true;
     LocalBroadcastManager.getInstance(getReactApplicationContext()).registerReceiver(this.onConferenceTerminatedReceiver, intentFilter);
   }
 }

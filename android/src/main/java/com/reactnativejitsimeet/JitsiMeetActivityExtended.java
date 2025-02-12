@@ -10,8 +10,14 @@ import org.jitsi.meet.sdk.JitsiMeetActivity;
 import org.jitsi.meet.sdk.JitsiMeetConferenceOptions;
 import org.jitsi.meet.sdk.JitsiMeetView;
 
+
 public class JitsiMeetActivityExtended extends JitsiMeetActivity {
-  @Override
+  public static JitsiMeetActivityExtended instance;
+    public static JitsiMeetActivityExtended getInstance() {
+      return instance;
+    }
+
+    @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
   }

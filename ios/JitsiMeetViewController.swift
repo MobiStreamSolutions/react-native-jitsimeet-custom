@@ -4,8 +4,10 @@ import JitsiMeetSDK
 class JitsiMeetViewController: UIViewController {
   var conferenceOptions: JitsiMeetConferenceOptions?
   var resolver: RCTPromiseResolveBlock?
-  var jitsiMeetView : JitsiMeetView?
-  fileprivate var pipViewCoordinator: PiPViewCoordinator?
+  var jitsiMeetView = JitsiMeetView()
+  var videoMutedCount = true
+  var conferenceActive = true
+  var alertController: UIAlertController?
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -50,10 +52,67 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
     }
   }
   
-  func conferenceTerminated(_ data: [AnyHashable : Any]!) {
-      DispatchQueue.main.async {
-        self.cleanUp()
-        self.dismiss(animated: false)
-      }
+  fileprivate func cleanUp() {
+    jitsiMeetView?.removeFromSuperview()
+    jitsiMeetView = nil
+    pipViewCoordinator = nil
   }
+  
+  func conferenceTerminated(_ data: [AnyHashable : Any]!) {
+    conferenceActive = false
+    self.alertController?.dismiss(animated: false, completion: {
+      DispatchQueue.main.async {
+        self.dismiss(animated: true)
+      }
+    })
+    self.cleanUp()
+   
+  }
+  
+  private func checkCameraPermission() -> Bool {
+    let authStatus = AVCaptureDevice.authorizationStatus(for: .video)
+    return authStatus == .authorized
+  }
+  
+  // Show alert for camera permission denial
+  private func showCameraPermissionDialog() {
+    if !conferenceActive {
+      return;
+    }
+     alertController = UIAlertController(
+      title: "ShadowHQ needs access to your camera",
+      message: "Please go to settings and enable camera permissions for ShadowHQ",
+      preferredStyle: .alert
+    )
+    
+    alertController?.addAction(UIAlertAction(title: "Close", style: .default, handler: nil))
+    alertController?.addAction(UIAlertAction(title: "Go to Settings", style: .default, handler: { _ in
+      if let appSettings = URL(string: UIApplication.openSettingsURLString) {
+        UIApplication.shared.open(appSettings, options: [:], completionHandler: nil)
+      }
+    }))
+
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: {
+
+      self.present(self.alertController!, animated: true, completion: nil)
+
+    })
+
+  }
+  
+  func videoMutedChanged(_ data: [AnyHashable : Any]!) {
+    guard let muted = data["muted"] as? Int else {
+      print("Error: 'muted' key is not present or is not an Int.")
+      return
+    }
+    if (muted == 6)  {
+      conferenceActive = false
+    }
+        // If video is unmuted, check camera permission
+       if  muted == 0, conferenceActive, !checkCameraPermission(), !videoMutedCount {
+          showCameraPermissionDialog()
+        }
+       conferenceActive = true
+       videoMutedCount = false
+    }
 }
