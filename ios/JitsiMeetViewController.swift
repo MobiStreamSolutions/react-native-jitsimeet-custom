@@ -4,7 +4,7 @@ import JitsiMeetSDK
 class JitsiMeetViewController: UIViewController {
   var conferenceOptions: JitsiMeetConferenceOptions?
   var resolver: RCTPromiseResolveBlock?
-  var jitsiMeetView = JitsiMeetView()
+  var jitsiMeetView: JitsiMeetView?
   var videoMutedCount = true
   var conferenceActive = true
   var alertController: UIAlertController?
@@ -27,7 +27,7 @@ class JitsiMeetViewController: UIViewController {
     
     @objc func onOrientationChange() {
         let isPortrait = UIApplication.shared.statusBarOrientation.isPortrait
-        jitsiMeetView?.frame = CGRect.init(x: 0, y: isPortrait ? 44 : 0, width: self.view.frame.width, height: self.view.frame.height - ( isPortrait ? 78 : 10 ))
+      jitsiMeetView?.frame = CGRect.init(x: 0, y: isPortrait ? 44 : 0, width: self.view.frame.width, height: self.view.frame.height - ( isPortrait ? 78 : 10 ))
     }
     
     override func viewDidDisappear(_ animated: Bool) {
@@ -50,12 +50,6 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
       resolver!([])
       resolver = nil
     }
-  }
-  
-  fileprivate func cleanUp() {
-    jitsiMeetView?.removeFromSuperview()
-    jitsiMeetView = nil
-    pipViewCoordinator = nil
   }
   
   func conferenceTerminated(_ data: [AnyHashable : Any]!) {
