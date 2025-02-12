@@ -209,11 +209,11 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
         .setPositiveButton("Close", (dialog, which) -> dialog.dismiss())
         .setNegativeButton("Go to Settings", (dialog, which) -> {
           // Open the app's settings
+          dialog.dismiss();
           Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
           Uri uri = Uri.fromParts("package", jitsiActivity.getPackageName(), null);
           intent.setData(uri);
           jitsiActivity.startActivity(intent);
-          dialog.dismiss();
         })
         .show();
     });

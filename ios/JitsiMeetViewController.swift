@@ -80,10 +80,13 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
     )
     
     alertController?.addAction(UIAlertAction(title: "Close", style: .default, handler: nil))
-    alertController?.addAction(UIAlertAction(title: "Go to Settings", style: .default, handler: { _ in
-      if let appSettings = URL(string: UIApplication.openSettingsURLString) {
-        UIApplication.shared.open(appSettings, options: [:], completionHandler: nil)
-      }
+      alertController?.addAction(UIAlertAction(title: "Go to Settings", style: .default, handler: { _ in
+        // Dismiss the alert before navigating to settings
+        self.alertController?.dismiss(animated: true) {
+            if let appSettings = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(appSettings, options: [:], completionHandler: nil)
+            }
+        }
     }))
 
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: {
