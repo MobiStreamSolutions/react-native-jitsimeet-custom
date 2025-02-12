@@ -4,10 +4,16 @@ import JitsiMeetSDK
 class JitsiMeetViewController: UIViewController {
   var conferenceOptions: JitsiMeetConferenceOptions?
   var resolver: RCTPromiseResolveBlock?
-  var jitsiMeetView = JitsiMeetView()
+  var jitsiMeetView : JitsiMeetView?
+  fileprivate var pipViewCoordinator: PiPViewCoordinator?
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    
+    let jitsiMeetView = JitsiMeetView()
+    jitsiMeetView.delegate = self
+    self.jitsiMeetView = jitsiMeetView
+
     jitsiMeetView.join(conferenceOptions)
     jitsiMeetView.delegate = self
       
@@ -19,11 +25,16 @@ class JitsiMeetViewController: UIViewController {
     
     @objc func onOrientationChange() {
         let isPortrait = UIApplication.shared.statusBarOrientation.isPortrait
-        jitsiMeetView.frame = CGRect.init(x: 0, y: isPortrait ? 44 : 0, width: self.view.frame.width, height: self.view.frame.height - ( isPortrait ? 78 : 10 ))
+        jitsiMeetView?.frame = CGRect.init(x: 0, y: isPortrait ? 44 : 0, width: self.view.frame.width, height: self.view.frame.height - ( isPortrait ? 78 : 10 ))
     }
     
     override func viewDidDisappear(_ animated: Bool) {
         self.setNeedsStatusBarAppearanceUpdate()
+    }
+    
+    fileprivate func cleanUp() {
+      jitsiMeetView?.removeFromSuperview()
+      jitsiMeetView = nil
     }
     
     override var prefersStatusBarHidden: Bool {
@@ -41,7 +52,8 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
   
   func conferenceTerminated(_ data: [AnyHashable : Any]!) {
       DispatchQueue.main.async {
-          self.dismiss(animated: false)
+        self.cleanUp()
+        self.dismiss(animated: false)
       }
   }
 }
