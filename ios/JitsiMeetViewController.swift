@@ -5,7 +5,7 @@ class JitsiMeetViewController: UIViewController {
   var conferenceOptions: JitsiMeetConferenceOptions?
   var resolver: RCTPromiseResolveBlock?
   var jitsiMeetView = JitsiMeetView()
-  var videoMutedCount = 0
+  var videoMutedCount = true
   var conferenceActive = true
   var alertController: UIAlertController?
 
@@ -99,10 +99,10 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
       conferenceActive = false
     }
         // If video is unmuted, check camera permission
-       if  muted == 0, conferenceActive, !checkCameraPermission(), videoMutedCount >= 1 {
+       if  muted == 0, conferenceActive, !checkCameraPermission(), !videoMutedCount {
           showCameraPermissionDialog()
         }
        conferenceActive = true
-       videoMutedCount+=1
+       videoMutedCount = false
     }
 }

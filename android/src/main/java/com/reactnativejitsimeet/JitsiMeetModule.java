@@ -36,7 +36,7 @@ import java.util.Map;
 public class JitsiMeetModule extends ReactContextBaseJavaModule {
   public static final String NAME = "JitsiMeet";
 
-  private int toggleFirstVideoMuted = 0;
+  private Boolean toggleFirstVideoMuted = true;
 
   private BroadcastReceiver onConferenceTerminatedReceiver;
 
@@ -188,14 +188,14 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
           isMuted = (Boolean) data.get("muted");
         }
 
-        if (!isMuted && toggleFirstVideoMuted > 1 && ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+        if (!isMuted && !toggleFirstVideoMuted && ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
           != PackageManager.PERMISSION_GRANTED) {
           JitsiMeetActivityExtended jitsiActivity = JitsiMeetActivityExtended.getInstance();
           if (jitsiActivity != null) {
             showMuteDialog();
           }
         }
-        toggleFirstVideoMuted++;
+        toggleFirstVideoMuted = false;
       }
     }
   }
@@ -233,7 +233,7 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
     };
 
     IntentFilter intentFilter = new IntentFilter(BroadcastEvent.Type.CONFERENCE_TERMINATED.getAction());
-    toggleFirstVideoMuted = 0;
+    toggleFirstVideoMuted =  true;
     LocalBroadcastManager.getInstance(getReactApplicationContext()).registerReceiver(this.onConferenceTerminatedReceiver, intentFilter);
   }
 }
