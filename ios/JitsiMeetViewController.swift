@@ -11,6 +11,11 @@ class JitsiMeetViewController: UIViewController {
 
   override func viewDidLoad() {
     super.viewDidLoad()
+    
+    let jitsiMeetView = JitsiMeetView()
+    jitsiMeetView.delegate = self
+    self.jitsiMeetView = jitsiMeetView
+
     jitsiMeetView.join(conferenceOptions)
     jitsiMeetView.delegate = self
       
@@ -22,11 +27,16 @@ class JitsiMeetViewController: UIViewController {
     
     @objc func onOrientationChange() {
         let isPortrait = UIApplication.shared.statusBarOrientation.isPortrait
-        jitsiMeetView.frame = CGRect.init(x: 0, y: isPortrait ? 44 : 0, width: self.view.frame.width, height: self.view.frame.height - ( isPortrait ? 78 : 10 ))
+        jitsiMeetView?.frame = CGRect.init(x: 0, y: isPortrait ? 44 : 0, width: self.view.frame.width, height: self.view.frame.height - ( isPortrait ? 78 : 10 ))
     }
     
     override func viewDidDisappear(_ animated: Bool) {
         self.setNeedsStatusBarAppearanceUpdate()
+    }
+    
+    fileprivate func cleanUp() {
+      jitsiMeetView?.removeFromSuperview()
+      jitsiMeetView = nil
     }
     
     override var prefersStatusBarHidden: Bool {
