@@ -3,9 +3,19 @@ package com.reactnativejitsimeet;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 
-import org.jitsi.meet.sdk.BroadcastEvent;
+import com.facebook.react.ReactApplication;
+import com.facebook.react.ReactInstanceManager;
+import com.facebook.react.ReactNativeHost;
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.ReactApplicationContext;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
+
 import org.jitsi.meet.sdk.JitsiMeetActivity;
 import org.jitsi.meet.sdk.JitsiMeetConferenceOptions;
 import org.jitsi.meet.sdk.JitsiMeetView;
@@ -17,9 +27,16 @@ public class JitsiMeetActivityExtended extends JitsiMeetActivity {
       return instance;
     }
 
-    @Override
+  @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    instance = this;
+  }
+
+  @Override
+  public void onDestroy() {
+    super.onDestroy();
+    instance = null;
   }
 
   @Override
@@ -39,6 +56,39 @@ public class JitsiMeetActivityExtended extends JitsiMeetActivity {
 
     context.startActivity(intent);
   }
+
+  public static void startPictureInPicture() {
+    JitsiMeetActivityExtended activity = JitsiMeetActivityExtended.getInstance();
+    if (activity != null) {
+      JitsiMeetView view = activity.getJitsiView();
+      if (view != null) {
+        view.enterPictureInPicture();
+      }
+    }
+  }
+
+  private ReactNativeHost getReactNativeHost() {
+    return ((ReactApplication) getApplication()).getReactNativeHost();
+  }
+
+  @Override
+  public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode, Configuration newConfig) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
+    }
+
+    ReactApplicationContext reactContext = (ReactApplicationContext) getReactNativeHost().getReactInstanceManager().getCurrentReactContext();
+    if (reactContext != null) {
+      WritableMap params = Arguments.createMap();
+      params.putBoolean("isInPipMode", isInPictureInPictureMode);
+
+      reactContext
+        .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+        .emit("onPiPModeChanged", params);
+    }
+
+  }
+
 
   private void handlePictureInPicture() {
     JitsiMeetConferenceOptions conferenceOptions = getIntent().getParcelableExtra("JitsiMeetConferenceOptions");
