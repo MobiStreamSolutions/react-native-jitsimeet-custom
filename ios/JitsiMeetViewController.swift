@@ -1,5 +1,7 @@
 import UIKit
 import JitsiMeetSDK
+import Foundation
+import React
 
 class JitsiMeetViewController: UIViewController {
   var conferenceOptions: JitsiMeetConferenceOptions?
@@ -8,6 +10,7 @@ class JitsiMeetViewController: UIViewController {
   var videoMutedCount = true
   var conferenceActive = true
   var alertController: UIAlertController?
+  let eventEmitter: EventEmitter = .shared!
 
   override func viewDidLoad() {
     super.viewDidLoad()
@@ -51,17 +54,32 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
       resolver = nil
     }
   }
-  
+
   func conferenceTerminated(_ data: [AnyHashable : Any]!) {
-    conferenceActive = false
-    self.alertController?.dismiss(animated: false, completion: {
-      DispatchQueue.main.async {
+      print("conferenceTerminated called with data:", data ?? "No data")
+      conferenceActive = false
+      self.eventEmitter.sendEvent(withName: "onConferenceTerminated", body: nil)
+      self.alertController?.dismiss(animated: false, completion: {
+          DispatchQueue.main.async {
+              self.dismiss(animated: true) {
+                  if let jitsiMeet = UIApplication.shared.delegate as? JitsiMeet {
+                      jitsiMeet.vc = nil
+                  }
+              }
+          }
+      })
+      self.cleanUp()
+  }
+
+
+
+  
+  func customOverflowMenuButtonPressed(_ data: [AnyHashable: Any]!) {
+      if let id = data["id"] as? String, id == "minimize" {
         self.dismiss(animated: true)
       }
-    })
-    self.cleanUp()
-   
   }
+
   
   private func checkCameraPermission() -> Bool {
     let authStatus = AVCaptureDevice.authorizationStatus(for: .video)
@@ -80,13 +98,10 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
     )
     
     alertController?.addAction(UIAlertAction(title: "Close", style: .default, handler: nil))
-      alertController?.addAction(UIAlertAction(title: "Go to Settings", style: .default, handler: { _ in
-        // Dismiss the alert before navigating to settings
-        self.alertController?.dismiss(animated: true) {
-            if let appSettings = URL(string: UIApplication.openSettingsURLString) {
-                UIApplication.shared.open(appSettings, options: [:], completionHandler: nil)
-            }
-        }
+    alertController?.addAction(UIAlertAction(title: "Go to Settings", style: .default, handler: { _ in
+      if let appSettings = URL(string: UIApplication.openSettingsURLString) {
+        UIApplication.shared.open(appSettings, options: [:], completionHandler: nil)
+      }
     }))
 
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: {
@@ -111,5 +126,22 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
         }
        conferenceActive = true
        videoMutedCount = false
+    }
+}
+
+@objc(EventEmitter)
+class EventEmitter: RCTEventEmitter {
+
+    public static var shared:EventEmitter?
+
+    override init() {
+        super.init()
+        EventEmitter.shared = self
+    }
+
+    override func supportedEvents() -> [String]! {
+        return [
+           "onConferenceTerminated"
+        ]
     }
 }
