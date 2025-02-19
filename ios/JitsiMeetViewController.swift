@@ -56,24 +56,14 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
   }
 
   func conferenceTerminated(_ data: [AnyHashable : Any]!) {
-      print("conferenceTerminated called with data:", data ?? "No data")
       conferenceActive = false
       self.eventEmitter.sendEvent(withName: "onConferenceTerminated", body: nil)
-      self.alertController?.dismiss(animated: false, completion: {
-          DispatchQueue.main.async {
-              self.dismiss(animated: true) {
-                  if let jitsiMeet = UIApplication.shared.delegate as? JitsiMeet {
-                      jitsiMeet.vc = nil
-                  }
-              }
-          }
-      })
       self.cleanUp()
+      DispatchQueue.main.async {
+        self.dismiss(animated: true)
+    }
   }
 
-
-
-  
   func customOverflowMenuButtonPressed(_ data: [AnyHashable: Any]!) {
       if let id = data["id"] as? String, id == "minimize" {
         self.dismiss(animated: true)
@@ -104,10 +94,8 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
       }
     }))
 
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: {
-
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.10, execute: {
       self.present(self.alertController!, animated: true, completion: nil)
-
     })
 
   }
