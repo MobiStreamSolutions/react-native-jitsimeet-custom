@@ -54,13 +54,11 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
   
   func conferenceTerminated(_ data: [AnyHashable : Any]!) {
     conferenceActive = false
-    self.alertController?.dismiss(animated: false, completion: {
-      DispatchQueue.main.async {
-        self.dismiss(animated: true)
-      }
-    })
     self.cleanUp()
-   
+    
+    DispatchQueue.main.async {
+      self.dismiss(animated: true)
+    }
   }
   
   private func checkCameraPermission() -> Bool {
@@ -89,10 +87,8 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
         }
     }))
 
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: {
-
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.10, execute: {
       self.present(self.alertController!, animated: true, completion: nil)
-
     })
 
   }
