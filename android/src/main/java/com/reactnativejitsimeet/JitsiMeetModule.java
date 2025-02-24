@@ -202,6 +202,9 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
 
   private void showMuteDialog() {
     JitsiMeetActivityExtended jitsiActivity = JitsiMeetActivityExtended.getInstance();
+    if (jitsiActivity == null || jitsiActivity.isFinishing() || jitsiActivity.isDestroyed()) {
+      return;
+    }
     jitsiActivity.runOnUiThread(() -> {
       new AlertDialog.Builder(jitsiActivity)
         .setTitle("ShadowHQ needs your camera permission")

@@ -20,6 +20,7 @@ public class JitsiMeetActivityExtended extends JitsiMeetActivity {
     @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    instance = this;
   }
 
   @Override
