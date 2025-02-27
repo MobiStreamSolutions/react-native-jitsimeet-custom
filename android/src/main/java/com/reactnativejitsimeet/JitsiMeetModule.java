@@ -1,15 +1,18 @@
 package com.reactnativejitsimeet;
-
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.PictureInPictureParams;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
+import android.util.Rational;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
@@ -22,6 +25,7 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.ReadableMapKeySetIterator;
 import com.facebook.react.module.annotations.ReactModule;
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import org.jitsi.meet.sdk.BroadcastAction;
 import org.jitsi.meet.sdk.BroadcastEvent;
@@ -30,6 +34,7 @@ import org.jitsi.meet.sdk.JitsiMeetUserInfo;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Map;
 
 @ReactModule(name = JitsiMeetModule.NAME)
@@ -142,6 +147,16 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
       }
     }
 
+    ArrayList<Bundle> customToolbarButtons = new ArrayList<Bundle>();
+
+    Bundle firstCustomButton = new Bundle();
+
+    firstCustomButton.putString("text", "Minimize call");
+    firstCustomButton.putString("icon", "");
+    firstCustomButton.putString("id", "minimize");
+
+    customToolbarButtons.add(firstCustomButton);
+    builder.setConfigOverride("customToolbarButtons", customToolbarButtons);
     JitsiMeetActivityExtended.launchExtended(getReactApplicationContext(), builder.build());
 
     this.registerOnConferenceTerminatedListener(onConferenceTerminated);
@@ -151,6 +166,22 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
   @ReactMethod
   public void launch(ReadableMap options, Promise onConferenceTerminated) {
     launchJitsiMeetView(options, onConferenceTerminated);
+  }
+
+  @ReactMethod
+  public void resumeJitsiCall(Promise promise) {
+    JitsiMeetActivityExtended jitsiActivity = JitsiMeetActivityExtended.getInstance();
+
+    if (jitsiActivity != null) {
+      // Jitsi call is ongoing, bring it to the foreground
+      Intent intent = new Intent(jitsiActivity, JitsiMeetActivityExtended.class);
+      intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+      jitsiActivity.startActivity(intent);
+      promise.resolve(true);
+    } else {
+      // No active Jitsi call
+      promise.resolve(false);
+    }
   }
 
   private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
@@ -197,6 +228,30 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
         }
         toggleFirstVideoMuted++;
       }
+
+      if (event.getType() == BroadcastEvent.Type.CUSTOM_OVERFLOW_MENU_BUTTON_PRESSED) {
+        Map<String, Object> data = event.getData();
+        if ("minimize".equals(data.get("id"))) {
+          Rational aspectRatio = new Rational(16, 9);
+
+          // Create PictureInPictureParams.Builder and configure
+          PictureInPictureParams.Builder pipBuilder = null;
+          if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            pipBuilder = new PictureInPictureParams.Builder();
+
+            pipBuilder.setAspectRatio(aspectRatio);
+            JitsiMeetActivityExtended jitsiActivity = JitsiMeetActivityExtended.getInstance();
+            // Enter PiP mode
+            JitsiMeetActivityExtended.startPictureInPicture();
+          }
+        }
+      }
+
+      if (event.getType() == BroadcastEvent.Type.CONFERENCE_TERMINATED) {
+        getReactApplicationContext()
+          .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+          .emit("onConferenceTerminated", null);
+      }
     }
   }
 
@@ -212,11 +267,11 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
         .setPositiveButton("Close", (dialog, which) -> dialog.dismiss())
         .setNegativeButton("Go to Settings", (dialog, which) -> {
           // Open the app's settings
-          dialog.dismiss();
           Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
           Uri uri = Uri.fromParts("package", jitsiActivity.getPackageName(), null);
           intent.setData(uri);
           jitsiActivity.startActivity(intent);
+          dialog.dismiss();
         })
         .show();
     });
@@ -239,4 +294,10 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
     toggleFirstVideoMuted = 0;
     LocalBroadcastManager.getInstance(getReactApplicationContext()).registerReceiver(this.onConferenceTerminatedReceiver, intentFilter);
   }
+  @ReactMethod
+  public void addListener(String eventName) {}
+
+  @ReactMethod
+  public void removeListeners(Integer count) {}
+
 }
