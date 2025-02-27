@@ -41,7 +41,7 @@ import java.util.Map;
 public class JitsiMeetModule extends ReactContextBaseJavaModule {
   public static final String NAME = "JitsiMeet";
 
-  private Boolean toggleFirstVideoMuted = true;
+  private int toggleFirstVideoMuted = 0;
 
   private BroadcastReceiver onConferenceTerminatedReceiver;
 
@@ -219,14 +219,14 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
           isMuted = (Boolean) data.get("muted");
         }
 
-        if (!isMuted && !toggleFirstVideoMuted && ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+        if (!isMuted && toggleFirstVideoMuted >= 2 && ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
           != PackageManager.PERMISSION_GRANTED) {
           JitsiMeetActivityExtended jitsiActivity = JitsiMeetActivityExtended.getInstance();
           if (jitsiActivity != null) {
             showMuteDialog();
           }
         }
-        toggleFirstVideoMuted = false;
+        toggleFirstVideoMuted++;
       }
 
       if (event.getType() == BroadcastEvent.Type.CUSTOM_OVERFLOW_MENU_BUTTON_PRESSED) {
@@ -257,6 +257,9 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
 
   private void showMuteDialog() {
     JitsiMeetActivityExtended jitsiActivity = JitsiMeetActivityExtended.getInstance();
+    if (jitsiActivity == null || jitsiActivity.isFinishing() || jitsiActivity.isDestroyed()) {
+      return;
+    }
     jitsiActivity.runOnUiThread(() -> {
       new AlertDialog.Builder(jitsiActivity)
         .setTitle("ShadowHQ needs your camera permission")
@@ -288,7 +291,7 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
     };
 
     IntentFilter intentFilter = new IntentFilter(BroadcastEvent.Type.CONFERENCE_TERMINATED.getAction());
-    toggleFirstVideoMuted =  true;
+    toggleFirstVideoMuted = 0;
     LocalBroadcastManager.getInstance(getReactApplicationContext()).registerReceiver(this.onConferenceTerminatedReceiver, intentFilter);
   }
   @ReactMethod

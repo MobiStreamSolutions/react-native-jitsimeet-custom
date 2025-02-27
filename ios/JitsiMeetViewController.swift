@@ -94,7 +94,7 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
       }
     }))
 
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.10, execute: {
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.50, execute: {
       self.present(self.alertController!, animated: true, completion: nil)
     })
 
