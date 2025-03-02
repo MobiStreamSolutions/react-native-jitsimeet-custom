@@ -62,6 +62,15 @@ struct JitsiMeetUtil {
       for (flag, value) in configOverrides {
         builder.setConfigOverride(flag as! String, withValue: value)
       }
+      
+      let customToolbarButtons: [[String: Any]] = [
+        [
+        "icon": "",
+        "id": "minimize",
+        "text": "Minimize Call"
+        ]
+      ]
+      builder.setConfigOverride("customToolbarButtons", with: customToolbarButtons)
     }
   }
 }
