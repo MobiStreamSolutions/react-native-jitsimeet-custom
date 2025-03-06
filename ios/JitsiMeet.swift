@@ -7,7 +7,7 @@ class JitsiMeet: NSObject {
   var vc: JitsiMeetViewController?
     
   @objc func hangUp() {
-    self.vc?.jitsiMeetView.hangUp()
+    self.vc?.jitsiMeetView?.hangUp()
   }
     
   @objc func launchJitsiMeetView(_ options: NSDictionary, resolver resolve: @escaping RCTPromiseResolveBlock, rejecter reject: RCTPromiseRejectBlock) {
@@ -34,15 +34,13 @@ class JitsiMeet: NSObject {
                           topVC.present(activeVC, animated: true, completion: nil)
                       }
                   } else {
-                      // Directly bring it to the front
                       topVC.present(activeVC, animated: true, completion: nil)
                   }
               }
-              resolve(nil)
-              return
+              resolve(true)
+          } else {
+              resolve(false)
           }
-
-          return
       }
   }
 
