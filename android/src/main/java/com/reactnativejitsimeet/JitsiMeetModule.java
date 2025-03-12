@@ -10,11 +10,14 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import android.util.Log;
 import android.util.Rational;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
@@ -44,6 +47,8 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
   private int toggleFirstVideoMuted = 0;
 
   private BroadcastReceiver onConferenceTerminatedReceiver;
+
+  private static AlertDialog muteDialog;
 
   public JitsiMeetModule(ReactApplicationContext reactContext) {
     super(reactContext);
@@ -209,6 +214,7 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
 
     LocalBroadcastManager.getInstance(getReactApplicationContext()).registerReceiver(broadcastReceiver, intentFilter);
   }
+
   private void onBroadcastReceived(Context context, Intent intent) {
     if (intent != null) {
       BroadcastEvent event = new BroadcastEvent(intent);
@@ -260,20 +266,23 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
     if (jitsiActivity == null || jitsiActivity.isFinishing() || jitsiActivity.isDestroyed()) {
       return;
     }
+
     jitsiActivity.runOnUiThread(() -> {
-      new AlertDialog.Builder(jitsiActivity)
-        .setTitle("ShadowHQ needs your camera permission")
-        .setMessage("Please go to your device settings to enable video calling")
-        .setPositiveButton("Close", (dialog, which) -> dialog.dismiss())
-        .setNegativeButton("Go to Settings", (dialog, which) -> {
-          // Open the app's settings
-          Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-          Uri uri = Uri.fromParts("package", jitsiActivity.getPackageName(), null);
-          intent.setData(uri);
-          jitsiActivity.startActivity(intent);
-          dialog.dismiss();
-        })
-        .show();
+      if (muteDialog == null || !muteDialog.isShowing()) {
+        muteDialog = new AlertDialog.Builder(jitsiActivity)
+          .setTitle("ShadowHQ needs your camera permission")
+          .setMessage("Please go to your device settings to enable video calling")
+          .setPositiveButton("Close", (dialog, which) -> dialog.dismiss())
+          .setNegativeButton("Go to Settings", (dialog, which) -> {
+            // Open the app's settings
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            Uri uri = Uri.fromParts("package", jitsiActivity.getPackageName(), null);
+            intent.setData(uri);
+            jitsiActivity.startActivity(intent);
+            dialog.dismiss();
+          })
+          .show();
+      }
     });
   }
 
@@ -300,4 +309,9 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
   @ReactMethod
   public void removeListeners(Integer count) {}
 
+  public static void closeMuteDialog() {
+    if (muteDialog != null && muteDialog.isShowing()) {
+      muteDialog.dismiss();
+    }
+  }
 }
