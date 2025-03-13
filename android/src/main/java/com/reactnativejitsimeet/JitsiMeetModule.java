@@ -152,7 +152,7 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
     Bundle firstCustomButton = new Bundle();
 
     firstCustomButton.putString("text", "Minimize call");
-    firstCustomButton.putString("icon", "");
+    firstCustomButton.putString("icon", "android.resource://" + getReactApplicationContext().getPackageName() + "/drawable/minus");
     firstCustomButton.putString("id", "minimize");
 
     customToolbarButtons.add(firstCustomButton);
