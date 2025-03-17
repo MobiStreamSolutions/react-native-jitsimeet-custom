@@ -71,9 +71,19 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
   }
 
   
-  private func checkCameraPermission() -> Bool {
-    let authStatus = AVCaptureDevice.authorizationStatus(for: .video)
-    return authStatus == .authorized
+  private func checkCameraPermission(completion: @escaping (Bool) -> Void) {
+      let authStatus = AVCaptureDevice.authorizationStatus(for: .video)
+      
+      switch authStatus {
+      case .authorized:
+          completion(true)
+      case .denied, .restricted:
+          completion(false)
+      case .notDetermined:
+          completion(true)
+      @unknown default:
+          completion(false)
+      }
   }
   
   // Show alert for camera permission denial
@@ -101,20 +111,26 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
   }
   
   func videoMutedChanged(_ data: [AnyHashable : Any]!) {
-    guard let muted = data["muted"] as? Int else {
-      print("Error: 'muted' key is not present or is not an Int.")
-      return
-    }
-    if (muted == 6)  {
-      conferenceActive = false
-    }
-        // If video is unmuted, check camera permission
-       if  muted == 0, conferenceActive, !checkCameraPermission(), !videoMutedCount {
-          showCameraPermissionDialog()
-        }
-       conferenceActive = true
-       videoMutedCount = false
-    }
+      guard let muted = data["muted"] as? Int else {
+          print("Error: 'muted' key is not present or is not an Int.")
+          return
+      }
+
+      if muted == 6 {
+          conferenceActive = false
+      }
+
+      if muted == 0, conferenceActive, !videoMutedCount {
+          checkCameraPermission { granted in
+              if !granted {
+                  self.showCameraPermissionDialog()
+              }
+          }
+      }
+
+      conferenceActive = true
+      videoMutedCount = false
+  }
 }
 
 @objc(EventEmitter)
