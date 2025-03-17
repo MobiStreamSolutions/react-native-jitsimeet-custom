@@ -40,6 +40,7 @@ public class JitsiMeetActivityExtended extends JitsiMeetActivity {
   @Override
   public void onDestroy() {
     super.onDestroy();
+    closeMuteDialog();
     instance = null;
   }
 
