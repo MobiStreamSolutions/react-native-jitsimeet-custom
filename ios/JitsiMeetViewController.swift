@@ -71,50 +71,71 @@ extension JitsiMeetViewController: JitsiMeetViewDelegate {
   }
 
   
-  private func checkCameraPermission() -> Bool {
-    let authStatus = AVCaptureDevice.authorizationStatus(for: .video)
-    return authStatus == .authorized
+  private func checkCameraPermission(completion: @escaping (Bool) -> Void) {
+      let authStatus = AVCaptureDevice.authorizationStatus(for: .video)
+      
+      switch authStatus {
+      case .authorized:
+          completion(true)
+      case .denied, .restricted:
+          completion(false)
+      case .notDetermined:
+          completion(true)
+      @unknown default:
+          completion(false)
+      }
   }
   
   // Show alert for camera permission denial
-  private func showCameraPermissionDialog() {
-    if !conferenceActive {
-      return;
-    }
-     alertController = UIAlertController(
-      title: "ShadowHQ needs access to your camera",
-      message: "Please go to settings and enable camera permissions for ShadowHQ",
-      preferredStyle: .alert
-    )
-    
-    alertController?.addAction(UIAlertAction(title: "Close", style: .default, handler: nil))
-    alertController?.addAction(UIAlertAction(title: "Go to Settings", style: .default, handler: { _ in
-      if let appSettings = URL(string: UIApplication.openSettingsURLString) {
-        UIApplication.shared.open(appSettings, options: [:], completionHandler: nil)
+   private func showCameraPermissionDialog() {
+      guard conferenceActive, alertController == nil else {
+          return
       }
-    }))
 
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.50, execute: {
-      self.present(self.alertController!, animated: true, completion: nil)
-    })
+      alertController = UIAlertController(
+          title: "ShadowHQ needs access to your camera",
+          message: "Please go to settings and enable camera permissions for ShadowHQ",
+          preferredStyle: .alert
+      )
 
+      alertController?.addAction(UIAlertAction(title: "Close", style: .default, handler: { _ in
+          self.alertController = nil
+      }))
+      alertController?.addAction(UIAlertAction(title: "Go to Settings", style: .default, handler: { _ in
+          if let appSettings = URL(string: UIApplication.openSettingsURLString) {
+              UIApplication.shared.open(appSettings, options: [:], completionHandler: nil)
+          }
+          self.alertController = nil
+      }))
+
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.50) {
+          if self.presentedViewController == nil {
+              self.present(self.alertController!, animated: true, completion: nil)
+          }
+      }
   }
   
   func videoMutedChanged(_ data: [AnyHashable : Any]!) {
-    guard let muted = data["muted"] as? Int else {
-      print("Error: 'muted' key is not present or is not an Int.")
-      return
-    }
-    if (muted == 6)  {
-      conferenceActive = false
-    }
-        // If video is unmuted, check camera permission
-       if  muted == 0, conferenceActive, !checkCameraPermission(), !videoMutedCount {
-          showCameraPermissionDialog()
-        }
-       conferenceActive = true
-       videoMutedCount = false
-    }
+      guard let muted = data["muted"] as? Int else {
+          print("Error: 'muted' key is not present or is not an Int.")
+          return
+      }
+
+      if muted == 6 {
+          conferenceActive = false
+      }
+
+      if muted == 0, conferenceActive, !videoMutedCount {
+          checkCameraPermission { granted in
+              if !granted {
+                  self.showCameraPermissionDialog()
+              }
+          }
+      }
+
+      conferenceActive = true
+      videoMutedCount = false
+  }
 }
 
 @objc(EventEmitter)

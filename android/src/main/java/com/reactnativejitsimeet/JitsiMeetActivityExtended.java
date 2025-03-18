@@ -1,8 +1,12 @@
 package com.reactnativejitsimeet;
 
+import static com.reactnativejitsimeet.JitsiMeetModule.closeMuteDialog;
+
+import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
@@ -36,6 +40,7 @@ public class JitsiMeetActivityExtended extends JitsiMeetActivity {
   @Override
   public void onDestroy() {
     super.onDestroy();
+    closeMuteDialog();
     instance = null;
   }
 
@@ -89,6 +94,17 @@ public class JitsiMeetActivityExtended extends JitsiMeetActivity {
 
   }
 
+  @Override
+  public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    for (int i = 0; i < permissions.length; i++) {
+      if (Manifest.permission.CAMERA.equals(permissions[i])) {
+        if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+          closeMuteDialog();
+        }
+      }
+    }
+  }
 
   private void handlePictureInPicture() {
     JitsiMeetConferenceOptions conferenceOptions = getIntent().getParcelableExtra("JitsiMeetConferenceOptions");
