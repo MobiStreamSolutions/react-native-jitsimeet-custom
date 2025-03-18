@@ -65,7 +65,7 @@ struct JitsiMeetUtil {
       
       let customToolbarButtons: [[String: Any]] = [
         [
-        "icon": "",
+        "icon": "minus",
         "id": "minimize",
         "text": "Minimize Call"
         ]
