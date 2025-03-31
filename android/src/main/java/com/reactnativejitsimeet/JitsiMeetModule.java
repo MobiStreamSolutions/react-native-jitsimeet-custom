@@ -253,6 +253,7 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
             pipBuilder.setAspectRatio(aspectRatio);
             JitsiMeetActivityExtended jitsiActivity = JitsiMeetActivityExtended.getInstance();
             // Enter PiP mode
+            toggleFirstVideoMuted = 0;
             JitsiMeetActivityExtended.startPictureInPicture();
           }
         }
