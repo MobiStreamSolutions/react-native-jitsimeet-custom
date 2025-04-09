@@ -47,7 +47,9 @@ import java.util.Map;
 public class JitsiMeetModule extends ReactContextBaseJavaModule {
   public static final String NAME = "JitsiMeet";
 
-  private int toggleFirstVideoMuted = 0;
+  public static boolean activityStart = false;
+
+  private static int toggleFirstVideoMuted = 0;
 
   private BroadcastReceiver onConferenceTerminatedReceiver;
 
@@ -331,5 +333,13 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
       muteDialog.dismiss();
       muteDialog = null;
     }
+  }
+  public static void resetMuteCount() {
+    if (!activityStart) {
+      activityStart = true;
+      return;
+    }
+    toggleFirstVideoMuted = 1;
+    closeMuteDialog();
   }
 }
