@@ -1,6 +1,8 @@
 package com.reactnativejitsimeet;
 
 import static com.reactnativejitsimeet.JitsiMeetModule.closeMuteDialog;
+import static com.reactnativejitsimeet.JitsiMeetModule.resetMuteCount;
+
 
 import android.Manifest;
 import android.app.Activity;
@@ -43,6 +45,13 @@ public class JitsiMeetActivityExtended extends JitsiMeetActivity {
     closeMuteDialog();
     instance = null;
   }
+
+  @Override
+  public void onStart() {
+    super.onStart();
+    resetMuteCount();
+  }
+
 
   @Override
   protected void onUserLeaveHint() {
