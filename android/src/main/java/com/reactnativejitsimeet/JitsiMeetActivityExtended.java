@@ -2,6 +2,7 @@ package com.reactnativejitsimeet;
 
 import static com.reactnativejitsimeet.JitsiMeetModule.closeMuteDialog;
 import static com.reactnativejitsimeet.JitsiMeetModule.resetMuteCount;
+import static com.reactnativejitsimeet.JitsiMeetModule.resetMuteProps;
 
 
 import android.Manifest;
@@ -42,6 +43,7 @@ public class JitsiMeetActivityExtended extends JitsiMeetActivity {
   @Override
   public void onDestroy() {
     super.onDestroy();
+    resetMuteProps();
     closeMuteDialog();
     instance = null;
   }

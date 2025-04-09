@@ -342,4 +342,9 @@ public class JitsiMeetModule extends ReactContextBaseJavaModule {
     toggleFirstVideoMuted = 1;
     closeMuteDialog();
   }
+  public static void resetMuteProps() {
+    toggleFirstVideoMuted = 0;
+    activityStart = false;
+  }
+
 }
